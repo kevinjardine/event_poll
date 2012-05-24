@@ -1,9 +1,7 @@
 <?php
 $guid = get_input('guid');
+$event_length = get_input('event_length');
 $poll = get_input('poll');
-$event = get_entity($guid);
-if (elgg_instanceof($event,'object','event_calendar') && $event->canEdit()) {
-	$event->event_poll = serialize($poll);
-}
 
-echo '';
+elgg_load_library('elgg:event_poll');
+echo elgg_poll_set_poll($guid,$poll,$event_length);

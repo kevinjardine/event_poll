@@ -59,7 +59,7 @@
 }
 
 #event-poll-vote-table tr td {
-	width: 80px;
+	width: 40px;
 	text-align: center;
 	padding: 2px;
 }
@@ -94,6 +94,10 @@
 	height: 70px;
 }
 
+#event-poll-vote-others-wrapper {
+	clear: both;
+}
+
 #event-poll-schedule-message {
 	width: 600px;
 }
@@ -114,4 +118,95 @@
 
 #event-poll-schedule-options li label {
 	font-weight: normal;
+}
+
+.event-poll-listing-header-wrapper, .event-poll-listing-item-wrapper {
+	width: auto;
+}
+
+.event-poll-listing-header-wrapper {
+	margin-top: 10px;
+}
+
+.event-poll-listing-header-subject, .event-poll-listing-subject {
+	float: left;
+	width: 400px;
+	border-bottom: 1px solid #AAAAAA;
+	border-left: 1px solid #AAAAAA;
+	padding: 2px;
+}
+
+.event-poll-listing-header-subject, .event-poll-listing-header-date, .event-poll-listing-header-requester {
+ 	border-top: 1px solid #AAAAAA;
+ 	font-weight: bold;
+ 	font-size: 1.1em;
+ }
+
+.event-poll-listing-header-requester, .event-poll-listing-requester {
+	float: left;
+	width: 150px;
+	border-bottom: 1px solid #AAAAAA;
+	border-left: 1px solid #AAAAAA;
+	border-right: 1px solid #AAAAAA;
+	padding: 2px;
+}
+
+.event-poll-listing-header-date, .event-poll-listing-date {
+	float: left;
+	width: 150px;
+	border-bottom: 1px solid #AAAAAA;
+	border-right: 1px solid #AAAAAA;
+	padding: 2px;	
+}
+
+#event-poll-vote-event-data-wrapper, .event-poll-human-date-bit, .event-poll-human-time-bit, .event-poll-click-id {
+	display: none;
+}
+
+.event-poll-vote-none-td1, .event-poll-vote-none-td2 {
+	width: 130px !important;
+}
+
+.event-poll-vote-none-td2 {
+	border-left: solid 1px #000000;
+}
+
+#event-poll-date-container {
+	float: left;
+	border: solid 1px #AAAAAA;
+	width: 220px;
+	margin-left: 5px;
+	height: 405px;
+}
+
+#event-poll-date-container h3 {
+	padding-top: 5px;
+	padding-bottom: 5px;
+	text-align: center;
+}
+
+.event-poll-date-options {
+	position: relative;
+	left: 2px;
+}
+
+.event-poll-human-date {
+	font-size: 0.85em;
+}
+
+.event-poll-date-alert {
+	border: solid 1px #FF0000 !important;
+}
+
+.event-poll-vote-date-td-header {
+	font-size: 0.85em;
+}
+
+.event-poll-new-class div.fc-event-content, .event-poll-new-class div.fc-event-inner {
+	background-color: #00FFFF !important;
+	color: #FF0000 !important;
+}
+
+.event-poll-class div.fc-event-content, .event-poll-class div.fc-event-inner {
+	background-color: #666666 !important;
 }

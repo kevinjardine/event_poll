@@ -1,5 +1,6 @@
 <?php
 elgg_register_event_handler('init','system','event_poll_init');
+elgg_register_event_handler('pagesetup','system','event_poll_pagesetup');
 function event_poll_init() {
 	
 	elgg_register_library('elgg:event_poll', elgg_get_plugins_path() . 'event_poll/models/model.php');
@@ -24,14 +25,32 @@ function event_poll_init() {
 	elgg_register_action("event_poll/schedule_message","$action_path/schedule_message.php");
 }
 
+function event_poll_pagesetup() {
+	elgg_load_library('elgg:event_calendar');
+	elgg_load_library('elgg:event_poll');
+	$poe = elgg_get_page_owner_entity();
+	if (elgg_instanceof($poe,'group')) {
+		$group_guid = $poe->guid;
+	} else {
+		$group_guid = 0;
+	}
+	$context = elgg_get_context();
+	if (in_array($context, array('event_calendar','event_calendar:view','event_poll'))) {
+		if (event_calendar_can_add($group_guid)) {
+			event_poll_handle_event_poll_add_items($group_guid);
+		}
+	}
+}
+
 /**
  * Dispatches event poll pages.
  *
  * URLs take the form of
- *  New event poll:        			event_poll/add/<event_guid>
- *  Edit event poll:       			event_poll/edit/<event_guid>
- *  Vote in poll:  					event_poll/vote/<event_guid>
- *  Schedule event:  				event_poll/schedule/<event_guid>
+ *  New event poll:        	event_poll/add/<event_guid>
+ *  Edit event poll:       	event_poll/edit/<event_guid>
+ *  Vote in poll:  			event_poll/vote/<event_guid>
+ *  Schedule event:  		event_poll/schedule/<event_guid>
+ *  List polls:  			event_poll/list/<filter>
  *
  * @param array $page
  * @return NULL
@@ -53,6 +72,10 @@ function event_poll_page_handler($page) {
 		case 'schedule':
 			gatekeeper();
 			echo event_poll_get_page_content_schedule($page[1]);
+			break;
+		case 'list':
+			gatekeeper();
+			echo event_poll_get_page_content_list($page[1]);
 			break;
 		case 'get_times_dropdown':
 			gatekeeper();
