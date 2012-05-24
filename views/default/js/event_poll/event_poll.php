@@ -435,7 +435,8 @@ elgg.event_poll.sendPoll = function(e) {
 			invitees : $('input[name="members[]"]').map(function(){return $(this).val();}).get()	
 	};
 	elgg.action('event_poll/invite', {data: d, success: function(response) {alert(response['output'].msg);}});
-	$('input[name="members[]"]').parent().remove();
+	elgg.forward('event_poll/list/all');
+	//$('input[name="members[]"]').parent().remove();
 	e.preventDefault();
 }
 
