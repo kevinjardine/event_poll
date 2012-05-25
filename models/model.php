@@ -462,6 +462,7 @@ function event_poll_merge_poll_events($events, $start_time,$end_time) {
 										array('name'=>'event_poll_start_time','value'=>$start_time,'operand'=>'>='),
 										array('name'=>'event_poll_start_time','value'=>$end_time,'operand'=>'<=')
 		),
+		'limit' => 0,
 	);
 	$eps = elgg_get_entities_from_metadata($options);
 	foreach($eps as $e) {
