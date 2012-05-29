@@ -54,8 +54,27 @@ elgg.event_poll.setupCalendar = function() {
 		slotMinutes: 15,
 		dayClick: elgg.event_poll.handleDayClick,
 		eventClick : elgg.event_poll.handleEventClick,
+		eventAfterRender : elgg.event_poll.handleEventRender, 
 		events: elgg.event_poll.handleGetEvents
 	});
+}
+
+elgg.event_poll.handleEventRender = function(event,element,view) {
+	var guid = $('#event-poll-event-guid').val();
+	if (event.guid == guid) {
+		var click_id = event.click_id;
+		element.find('.fc-event-content').append('<span rel="'+click_id+'" class="event-poll-delete-cell">[x]</span>');
+		//element.after('<span rel="'+click_id+'" class="event-poll-delete-cell">[x]</span>');
+	}
+}
+
+elgg.event_poll.deleteCell = function(e) {
+	var click_id = $(this).attr('rel');
+	alert(click_id);
+	e.preventDefault();
+	e.stopPropagation();
+	e.stopImmediatePropagation();	
+	return false;
 }
 
 elgg.event_poll.handleDayClick = function(date) {
@@ -93,11 +112,25 @@ elgg.event_poll.handleDayClick = function(date) {
 	}   
 };
 
-elgg.event_poll.handleEventClick = function(event) {
-    if (event.url) {
-        $.fancybox({'href':event.url});
-        return false;
-    }
+elgg.event_poll.handleEventClick = function(event,e) {
+	if (e.target.className == 'event-poll-delete-cell') {
+		click_id = e.target.getAttribute('rel');
+		$('.event-poll-date-options').each(
+			function(v) {
+				var this_click_id = $(this).find('.event-poll-click-id').html();
+				if (click_id == this_click_id) {
+					$(this).remove();
+				}
+			}
+		);
+		$('#calendar').fullCalendar('removeEvents', function(event) { return event.click_id == click_id; });
+		return false;
+	} else {
+	    if (event.url) {
+	        $.fancybox({'href':event.url});
+	        return false;
+	    }
+	}
 };
 
 elgg.event_poll.formatDate = function(date) {

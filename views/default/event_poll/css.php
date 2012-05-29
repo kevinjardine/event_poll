@@ -210,3 +210,9 @@
 .event-poll-class div.fc-event-content, .event-poll-class div.fc-event-inner {
 	background-color: #666666 !important;
 }
+
+.event-poll-delete-cell {
+	color: #000000;
+	z-index: 10;
+	position:relative;
+}
