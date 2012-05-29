@@ -1,3 +1,4 @@
+
 //<script type="text/javascript">
 elgg.provide('elgg.event_poll');
 
@@ -52,7 +53,7 @@ elgg.event_poll.setupCalendar = function() {
 		editable: false,
 		slotMinutes: 15,
 		dayClick: elgg.event_poll.handleDayClick,
-		eventClick : elgg.event_poll.doNothing,
+		eventClick : elgg.event_poll.handleEventClick,
 		events: elgg.event_poll.handleGetEvents
 	});
 }
@@ -90,6 +91,13 @@ elgg.event_poll.handleDayClick = function(date) {
 	    $('#calendar').fullCalendar('renderEvent',event_item,true);
 	    click_id += 1;
 	}   
+};
+
+elgg.event_poll.handleEventClick = function(event) {
+    if (event.url) {
+        $.fancybox({'href':event.url});
+        return false;
+    }
 };
 
 elgg.event_poll.formatDate = function(date) {

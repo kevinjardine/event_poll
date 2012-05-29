@@ -71,6 +71,9 @@ function event_poll_get_page_content_schedule($guid) {
 
 function event_poll_get_page_content_edit($page_type,$guid) {
 	elgg_load_js('elgg.event_poll');
+	elgg_load_js('lightbox');
+	elgg_load_css('lightbox');
+
 	$vars = array();
 	$vars['id'] = 'event-poll-edit';
 	$vars['name'] = 'event_poll_edit';
