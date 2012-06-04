@@ -82,7 +82,10 @@ if ($event->event_poll) {
 		if ($event->canEdit()) {
 			// This extra stuff appears only if a time for the event has been selected
 			$html = '<div id="event-poll-vote-event-data-wrapper">';
+			$html .= '<div class="event-calendar-edit-form-block event-calendar-edit-form-schedule-block">';
+			$html .= '<h2>'.elgg_echo('event_calendar:reminders:label').'</h2>';
 			$html .= elgg_view('event_calendar/reminder_section',$vars);
+			$html .= '</div>';
 	
 			$html .= elgg_view('event_calendar/personal_manage_section',$vars);
 			$html .= elgg_view('event_calendar/share_section',$vars);

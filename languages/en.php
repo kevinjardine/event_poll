@@ -61,6 +61,7 @@ $english = array(
 	'event_poll:hours_and' => "hour(s) and",
 	'event_poll:minutes' => "minutes",
 	'event_poll:selected_days' => "Selected times",
+	'event_calendar:reminders:label' => "Reminders",
 
 );
 				
