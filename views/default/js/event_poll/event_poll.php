@@ -63,7 +63,7 @@ elgg.event_poll.handleEventRender = function(event,element,view) {
 	var guid = $('#event-poll-event-guid').val();
 	if (event.guid == guid) {
 		var click_id = event.click_id;
-		element.find('.fc-event-content').append('<span rel="'+click_id+'" class="event-poll-delete-cell">[x]</span>');
+		element.find('.fc-event-title').prepend('<span rel="'+click_id+'" class="event-poll-delete-cell">[x]</span> ');
 		//element.after('<span rel="'+click_id+'" class="event-poll-delete-cell">[x]</span>');
 	}
 }
