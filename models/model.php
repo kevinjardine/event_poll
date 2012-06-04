@@ -320,6 +320,9 @@ HTML;
 	} else {
 		$content = elgg_echo('event_poll:listing:no_polls');
 	}
+
+	elgg_push_breadcrumb(elgg_echo('event_calendar:show_events_title'),'event_calendar/list');
+	elgg_push_breadcrumb($title);
 	
 	$params = array('title' => $title, 'content' => $content,'filter_override' => $filter_override);
 
@@ -344,7 +347,7 @@ function event_poll_vote($event,$message='',$schedule_slot='') {
 				@list($iso,$time) = explode('__',$schedule_slot);
 				
 				$event->start_time = $time;
-				$event->end_time = $event->event_length;
+				$event->end_time = $time+$event->event_length;
 				$event->end_date = strtotime($iso);
 				$event->start_date = strtotime("+ $time minutes",strtotime($iso));
 				$event->real_end_time = strtotime("+ ".$event->event_length." minutes",$event->start_date);
@@ -366,16 +369,16 @@ function event_poll_vote($event,$message='',$schedule_slot='') {
 		
 		$current_user = elgg_get_logged_in_user_entity();
 		
-		if (check_entity_relationship($current_user->guid, 'event_poll_invitation',$guid) && $event->event_poll) {
-			elgg_delete_annotations(array('guid'=>$guid,'annotation_name'=>'event_poll_vote','annotation_owner_guid' => $current_user->guid,'limit' => 0));
+		if (check_entity_relationship($current_user->guid, 'event_poll_invitation',$event->guid) && $event->event_poll) {
+			elgg_delete_annotations(array('guid'=>$event->guid,'annotation_name'=>'event_poll_vote','annotation_owner_guid' => $current_user->guid,'limit' => 0));
 			$poll_options = event_poll_get_options($event);
 			foreach($poll_options as $option) {
 				$tick = get_input($option);
 				if ($tick) {
-					create_annotation($guid,'event_poll_vote',$option,NULL,$current_user->guid,ACCESS_PUBLIC);
+					create_annotation($event->guid,'event_poll_vote',$option,NULL,$current_user->guid,ACCESS_PUBLIC);
 				}
 			}
-			add_entity_relationship($current_user->guid,'event_poll_voted',$guid);
+			add_entity_relationship($current_user->guid,'event_poll_voted',$event->guid);
 			if ($message && $message != elgg_echo('event_poll:vote_message:explanation')) {
 				$site = elgg_get_site_entity();
 				$message = elgg_echo('event_poll:vote_message:top',array($current_user->name, $current_user->username))."\n\n".$message;

@@ -475,10 +475,19 @@ elgg.event_poll.sendPoll = function(e) {
 			body : $('[name="invitation_body"]').val(),
 			invitees : $('input[name="members[]"]').map(function(){return $(this).val();}).get()	
 	};
-	elgg.action('event_poll/invite', {data: d, success: function(response) {alert(response['output'].msg);}});
-	elgg.forward('event_poll/list/all');
+	elgg.action('event_poll/invite', {data: d, success: elgg.event_poll.sendPollResponse});
 	//$('input[name="members[]"]').parent().remove();
 	e.preventDefault();
+}
+
+elgg.event_poll.sendPollResponse = function(response) {
+	var r = response['output'];
+	if (r['success']) {
+		elgg.system_message(r['msg']);
+	} else {
+		elgg.register_error(r['msg']);
+	}
+	elgg.forward('event_poll/list/all');
 }
 
 elgg.event_poll.handleVoteMessage = function(e) {

@@ -9,7 +9,11 @@ if ($event->event_poll) {
 	if(is_array($event_poll) && count($event_poll) > 0) {
 		echo elgg_view('input/hidden',array('name'=>'event_guid','value'=>$event->guid));
 		$current_user = elgg_get_logged_in_user_entity();
+		//print "event choices";
+		//print_r(event_poll_get_options($event));
 		$times_choices = event_poll_get_times($event->guid);
+		//print "times_choices: ";
+		//print_r($times_choices);
 		$invitees = event_poll_get_invitees($event->guid);
 		$voted_guids = event_poll_get_voted_guids($event->guid);
 		$current_schedule_slot = event_poll_get_current_schedule_slot($event);
