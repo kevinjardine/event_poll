@@ -212,11 +212,7 @@ function event_poll_display_vote_table_header($event_poll) {
 	$i = 0;
 	foreach ($event_poll as $iso => $date) {
 		$num_times = count($date['times']);
-		if ($i != 0) {
-			$table_header .= '<td class="event-poll-vote-date-td-header event-poll-vote-date-td" colspan="'.$num_times.'">'.$date['human_date'].'</td>';
-		} else {
-			$table_header .= '<td class="event-poll-vote-date-td-header" colspan="'.$num_times.'">'.$date['human_date'].'</td>';
-		}
+		$table_header .= '<td class="event-poll-vote-date-td-header event-poll-vote-date-td" colspan="'.$num_times.'">'.$date['human_date'].'</td>';
 		$j = 0;
 		foreach($date['human_times'] as $time) {
 			if ($j == 0) {
@@ -435,7 +431,6 @@ function elgg_poll_set_poll($guid,$poll,$event_length) {
 	if (elgg_instanceof($event,'object','event_calendar') && $event->canEdit()) {
 		$start_time = 2000000000;
 		$end_time = 0;
-		error_log(print_r($poll));
 		foreach($poll as $iso_date => $data) {
 			$ds = strtotime($iso_date);
 			foreach($data['times'] as $t) {
@@ -449,6 +444,9 @@ function elgg_poll_set_poll($guid,$poll,$event_length) {
 				}
 			}
 		}
+		
+		// sort the poll by time within date
+		
 		
 		$event->event_poll = serialize($poll);
 		$event->event_length = $event_length;

@@ -11,7 +11,8 @@ if(event_poll_vote($event,$message,$schedule_slot)) {
 	} else {
 		system_message(elgg_echo('event_poll:vote_response:success'));
 	}
-	forward($event->getURL());
+	//forward($event->getURL());
+	forward('event_poll/list');
 } else {
 	register_error(elgg_echo('event_poll:error_event_poll_edit'));
 	forward();

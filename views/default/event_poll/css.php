@@ -61,10 +61,10 @@
 #event-poll-vote-table tr td {
 	width: 40px;
 	text-align: center;
-	padding: 2px;
+	padding: 6px 2px 2px 2px;
 }
 
-.event-poll-vote-internal-td {
+.event-poll-vote-internal-td, .event-poll-vote-current-td, .event-poll-vote-none-td1 {
 	border: 1px solid #000000;
 }
 
@@ -74,16 +74,15 @@
 }
 
 .event-poll-vote-date-td {
-	border-left: 1px solid #000000;
-	border-right: 1px solid #000000;
+	border: 1px solid #000000;
 }
 
 .event-poll-left-td {
-	border-left: 1px solid #000000;
+	border: 1px solid #000000;
 }
 
 .event-poll-right-td {
-	border-right: 1px solid #000000;
+	border: 1px solid #000000;
 }
 
 #event-poll-vote-message-wrapper, #event-poll-vote-others-wrapper {

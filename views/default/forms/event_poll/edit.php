@@ -50,7 +50,7 @@ if (!$event_calendar_time_format) {
 <?php echo elgg_view('input/submit', array('id'=>'event-poll-back-button','name'=>'back','value'=>elgg_echo('event_poll:button:back')));?>
 <?php echo elgg_view('input/submit', array('id'=>'event-poll-next2-button','name'=>'next2','value'=>elgg_echo('event_poll:button:next')));?>
 <?php echo elgg_view('input/submit', array('id'=>'event-poll-back2-button','name'=>'back','value'=>elgg_echo('event_poll:button:back')));?>
-<?php echo elgg_view('input/submit', array('id'=>'event-poll-send-button','name'=>'next2','value'=>elgg_echo('event_poll:button:send')));?>
+<?php echo elgg_view('input/button', array('class'=>'elgg-button-submit','id'=>'event-poll-send-button','name'=>'next2','value'=>elgg_echo('event_poll:button:send')));?>
 <div class="event-poll-button-separator"></div>
 <div class="event-poll-calendar-wrapper" id="calendar"></div>
 <div id="event-poll-date-container">
@@ -58,4 +58,4 @@ if (!$event_calendar_time_format) {
 <div id="event-poll-date-wrapper"></div>
 </div>
 <div class="event-poll-button-separator"></div>
-<?php echo elgg_view('input/submit', array('id'=>'event-poll-next-button','name'=>'next','value'=>elgg_echo('event_poll:button:next')));?>
+<?php echo elgg_view('input/button', array('class'=>'elgg-button-submit','id'=>'event-poll-next-button','name'=>'next','value'=>elgg_echo('event_poll:button:next')));?>

@@ -3,6 +3,7 @@
 elgg.provide('elgg.event_poll');
 
 var event_poll_object = {};
+var event_polls = [];
 var max_time_count = 0;
 var click_id = 0;
 
@@ -23,6 +24,12 @@ elgg.event_poll.init = function () {
 	$('[name="schedule_slot"][type=radio]').change(elgg.event_poll.handleTimeSelection);
 	elgg.event_poll.handleTimeSelection();
 	elgg.event_poll.setupCalendar();
+	//prevent odd user picker behaviour on enter
+	$( ".ui-autocomplete-input" ).live( "autocompleteopen", function(event) {
+		var autocomplete = $( this ).data( "autocomplete" );
+		menu = autocomplete.menu;
+		menu.activate( $.Event({ type: "mouseenter" }), menu.element.children().first() );
+		});
 }
 
 elgg.event_poll.handleVoteChoice = function(e) {
@@ -90,27 +97,29 @@ elgg.event_poll.handleDayClick = function(date) {
 	    setTimeout(function() {$('#event-poll-date-container').removeClass('event-poll-date-alert');},250);
 	    $('#event-poll-date-wrapper').append(h);
 
-	    // add poll event to calendar
-	    var guid = $('#event-poll-event-guid').val();
-	    var lgth_m = parseInt($('#event-poll-length-minute').val());
-		var lgth_h = parseInt($('#event-poll-length-hour').val());
-	    var end_date = new Date(date.getTime()+1000*(lgth_h*60*60+lgth_m*60));
-	    var event_item = {
-			id: guid,
-			guid: guid,
-			click_id: click_id,
-			title: $('#event-poll-event-title').val(),
-			url: $('#event-poll-event-url').val(),
-			start:  date.getTime()/1000,
-			end : end_date.getTime()/1000,
-			className: 'event-poll-new-class',
-			allDay: false
-	    };
-
-	    $('#calendar').fullCalendar('renderEvent',event_item,true);
-	    click_id += 1;
+	    elgg.event_poll.addEventPollOptionToCalendar(date);
 	}   
 };
+
+elgg.event_poll.addEventPollOptionToCalendar = function(date) {
+    var guid = $('#event-poll-event-guid').val();
+    var lgth_m = parseInt($('#event-poll-length-minute').val());
+	var lgth_h = parseInt($('#event-poll-length-hour').val());
+    var end_date = new Date(date.getTime()+1000*(lgth_h*60*60+lgth_m*60));
+    var event_item = {
+		id: guid,
+		guid: guid,
+		click_id: click_id,
+		title: $('#event-poll-event-title').val(),
+		url: $('#event-poll-event-url').val(),
+		start:  date.getTime()/1000,
+		end : end_date.getTime()/1000,
+		className: 'event-poll-new-class',
+		allDay: false
+    };
+    $('#calendar').fullCalendar('renderEvent',event_item,true);
+    click_id += 1;
+}
 
 elgg.event_poll.handleEventClick = function(event,e) {
 	if (e.target.className == 'event-poll-delete-cell') {
@@ -251,7 +260,6 @@ elgg.event_poll.handleGetEvents = function(start, end, callback) {
 	);
 }*/
 
-// TODO - rework this for new 2 page system
 elgg.event_poll.createEventObject = function() {
 	max_time_count = 0;
 	event_poll_object = {};
@@ -268,10 +276,13 @@ elgg.event_poll.createEventObject = function() {
 			var d = td_bits[1];
 			if (!(d in event_poll_object)) {
 				event_poll_object[d] = {};
+				event_poll_object[d]['iso_date'] = d;
 				event_poll_object[d]['human_date'] = human_date;
 				event_poll_object[d]['times'] = [];
 				event_poll_object[d]['human_times'] = [];
+				event_poll_object[d]['time_object'] = {};
 			}
+			event_poll_object[d]['time_object'][t] = {iso_time: t, human_time:human_time};
 			event_poll_object[d]['times'].push(t);
 			event_poll_object[d]['human_times'].push(human_time);
 			if (max_time_count < event_poll_object[d]['times'].length) {
@@ -279,6 +290,36 @@ elgg.event_poll.createEventObject = function() {
 			}
 		}
 	);
+	// now sort the structure into event_polls
+	var iso_dates = elgg.event_poll.getKeys(event_poll_object);
+	iso_dates.sort();
+	event_polls = [];
+	for (var i = 0; i < iso_dates.length; i++) {
+		var pobj = event_poll_object[iso_dates[i]];
+		var tobj = pobj['time_object'];
+		var times = elgg.event_poll.getKeys(tobj);
+		times.sort(function(a,b) { return a-b; });
+		var ta = [];
+		for (var j = 0; j < times.length; j++) {
+			ta.push(tobj[times[j]]);
+		}
+		pobj['times_array'] = ta;
+		event_polls.push(pobj);
+	} 
+}
+
+elgg.event_poll.getKeys = function(obj)  {
+	var keys = [];
+
+    for(var key in obj)
+    {
+        if(obj.hasOwnProperty(key))
+        {
+            keys.push(key);
+        }
+    }
+
+    return keys;	
 }
 
 elgg.event_poll.handleStage2 = function(e) {
@@ -367,19 +408,19 @@ elgg.event_poll.populateReadOnlyTable = function() {
 	// insert the new table
 	$('#event-poll-date-times-table-read-only-wrapper').prepend(tb);
 	// add the data rows
-	$.each(event_poll_object,elgg.event_poll.insertReadOnlyTableRow);
+	$.each(event_polls,elgg.event_poll.insertReadOnlyTableRow);
 }
 
 elgg.event_poll.insertReadOnlyTableRow = function(index,item) {
-	human = item['human_date'];
-	times = item['human_times'];
+	var human = item['human_date'];
+	var times = item['times_array'];
 	var t = '<tr class="event-poll-readonly-table-row">';
     t += '<td>';
     t += '<span class="event-poll-human-date">'+human+'</span>';
     t += '</td>';
     $.each(times,
     	function (index,time) {
-    		t += '<td class="event-poll-time-readonly">'+time+'</td>';
+    		t += '<td class="event-poll-time-readonly">'+time['human_time']+'</td>';
     	}
     );
     t += '</tr>';
@@ -412,6 +453,22 @@ elgg.event_poll.handleChangeLength = function(e) {
 	$('#event-poll-date-wrapper').remove();
 	$('#event-poll-date-container').append('<div id="event-poll-date-wrapper"></div>');
 	$.each(event_poll_object,elgg.event_poll.insertDateDiv);
+
+	// remove event poll options from calendar
+	var guid = $('#event-poll-event-guid').val();
+	$('#calendar').fullCalendar('removeEvents', function(e) { return e.guid == guid; });
+	// add event polls back to calendar with corrected times
+	$.each(event_poll_object,elgg.event_poll.insertEventPollOption);
+	
+}
+elgg.event_poll.insertEventPollOption = function(key,value) {
+	var times = value['times'];	
+	var date_bits = key.split('-');
+	for (var i = 0; i < times.length; i++) {
+		var minutes = times[i];
+		var date = new Date(parseInt(date_bits[0]),parseInt(date_bits[1])-1,parseInt(date_bits[2]),0,minutes);
+		elgg.event_poll.addEventPollOptionToCalendar(date);
+	}
 }
 
 elgg.event_poll.insertTableRow = function(index) {
