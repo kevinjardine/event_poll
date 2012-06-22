@@ -129,13 +129,13 @@
 
 .event-poll-listing-header-subject, .event-poll-listing-subject {
 	float: left;
-	width: 400px;
+	width: 200px;
 	border-bottom: 1px solid #AAAAAA;
 	border-left: 1px solid #AAAAAA;
 	padding: 2px;
 }
 
-.event-poll-listing-header-subject, .event-poll-listing-header-date, .event-poll-listing-header-requester {
+.event-poll-listing-header-subject, .event-poll-listing-header-date, .event-poll-listing-header-requester, .event-poll-listing-header-responded {
  	border-top: 1px solid #AAAAAA;
  	font-weight: bold;
  	font-size: 1.1em;
@@ -150,7 +150,7 @@
 	padding: 2px;
 }
 
-.event-poll-listing-header-date, .event-poll-listing-date {
+.event-poll-listing-header-date, .event-poll-listing-date, .event-poll-listing-response, .event-poll-listing-header-responded {
 	float: left;
 	width: 150px;
 	border-bottom: 1px solid #AAAAAA;

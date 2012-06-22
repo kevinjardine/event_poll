@@ -157,6 +157,24 @@ function event_poll_get_options($event) {
 	return $options;
 }
 
+function event_poll_get_response_time($event_guid,$user_guid=0) {
+	if (!$user_guid) {
+		$user_guid = elgg_get_logged_in_user_guid();
+	}
+	$options= array(
+		'guid' => $event_guid,
+		'annotation_name' => 'event_poll_vote',
+		'owner_guid' => $user_guid,
+		'limit' => 1,
+	);
+	$annotations = elgg_get_annotations($options);
+	if ($annotations) {
+		return $annotations[0]->time_created;
+	} else {
+		return 0;
+	}
+}
+
 function event_poll_get_times($event_guid) {
 	$times = array();
 	$options= array(
@@ -299,17 +317,17 @@ function event_poll_get_page_content_list($filter) {
 	$content = elgg_list_entities($options,'elgg_get_entities_from_metadata','event_poll_list_polls');
 	
 	if ($content) {
-	
-		// TODO: add a header with column titles
 		$subject_header = elgg_echo('event_poll:listing:header:subject');
 		$requester_header = elgg_echo('event_poll:listing:header:requester');
 		$date_header = elgg_echo('event_poll:listing:header:date');
+		$responded_header = elgg_echo('event_poll:listing:header:responded');
 		
 		$header_bit = <<<HTML
 		<div class="event-poll-listing-header-wrapper">
 			<div class="event-poll-listing-header-subject">$subject_header</div>
 			<div class="event-poll-listing-header-requester">$requester_header</div>
 			<div class="event-poll-listing-header-date">$date_header</div>
+			<div class="event-poll-listing-header-responded">$responded_header</div>
 		</div>
 HTML;
 		$content = $header_bit.$content;
