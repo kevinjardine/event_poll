@@ -450,9 +450,10 @@ function event_poll_get_current_schedule_slot($event) {
 function event_poll_set_time_limits($event,$poll,$event_length) {
 	$start_time = 2000000000;
 	$end_time = 0;
-	foreach($poll as $iso_date => $data) {
+	foreach($poll as $date) {
+		$iso_date = $date['iso_date'];
 		$ds = strtotime($iso_date);
-		foreach($data['times_array'] as $t) {
+		foreach($date['times_array'] as $t) {
 			$m = $t['minutes'];
 			$ts = strtotime("+ $m minutes",$ds);
 			if ($start_time > $ts) {
@@ -501,7 +502,8 @@ function event_poll_merge_poll_events($events, $start_time,$end_time) {
 		$event_length = $e->event_length;
 		$p = unserialize($e->event_poll);
 		$data = array();
-		foreach($p as $iso_date => $times_data) {
+		foreach($p as $times_data) {
+			$iso_date = $times_data['iso_date'];
 			$dts = strtotime($iso_date);
 			if (isset($times_data['times_array'])) {
 				foreach($times_data['times_array'] as $item) {
@@ -537,13 +539,11 @@ function event_poll_handle_event_poll_add_items($group_guid=0) {
 
 // TODO: if $resend, then resend the poll invitations with a message that the poll has been changed
 function event_poll_change($event_guid,$day_delta,$minute_delta,$new_time,$resend) {
-	error_log("fragment: ".substr($new_time,strlen($new_time)-6));
 	if (substr($new_time,strlen($new_time)-6) == ".000Z") {
 		$new_time = substr($new_time,0,strlen($new_time)-6);
 	}
 	
 	$ts = strtotime($new_time);
-	error_log("The date $new_time was converted to the timestamp {$ts}.");
 	if (!$ts) {
 		return;
 	}
