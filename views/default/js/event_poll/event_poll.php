@@ -2,7 +2,6 @@
 //<script type="text/javascript">
 elgg.provide('elgg.event_poll');
 
-var event_poll_object = {};
 var event_polls = [];
 var max_time_count = 0;
 var click_id = 0;
@@ -47,23 +46,25 @@ elgg.event_poll.handleTimeSelection = function() {
 }
 
 elgg.event_poll.setupCalendar = function() {
-	$('#calendar').fullCalendar({
-		header: {
-			left: 'prev,next today',
-			center: 'title',
-		},
-		defaultView: 'agendaWeek',
-		allDaySlot: false,
-		month: $('#event-poll-month-number').val(),
-		firstHour: $('#event-poll-hour-number').val(),
-		ignoreTimezone: true,
-		editable: false,
-		slotMinutes: 15,
-		dayClick: elgg.event_poll.handleDayClick,
-		eventClick : elgg.event_poll.handleEventClick,
-		eventAfterRender : elgg.event_poll.handleEventRender, 
-		events: elgg.event_poll.handleGetEvents
-	});
+	if ($('#calendar').length > 0) {
+		$('#calendar').fullCalendar({
+			header: {
+				left: 'prev,next today',
+				center: 'title',
+			},
+			defaultView: 'agendaWeek',
+			allDaySlot: false,
+			month: $('#event-poll-month-number').val(),
+			firstHour: $('#event-poll-hour-number').val(),
+			ignoreTimezone: true,
+			editable: false,
+			slotMinutes: 15,
+			dayClick: elgg.event_poll.handleDayClick,
+			eventClick : elgg.event_poll.handleEventClick,
+			eventAfterRender : elgg.event_poll.handleEventRender, 
+			events: elgg.event_poll.handleGetEvents
+		});
+	}
 }
 
 elgg.event_poll.handleEventRender = function(event,element,view) {
@@ -236,33 +237,10 @@ elgg.event_poll.handleGetEvents = function(start, end, callback) {
 	});
 }
 
-/*elgg.event_poll.createEventObject = function() {
-	event_poll_object = {};
-	$('.event-poll-date-times-table-row').each(
-		function() {
-			var iso = $(this).find('.event-poll-iso-date').html();
-			var human = $(this).find('.event-poll-human-date').html();
-			event_poll_object[iso] = {};
-			event_poll_object[iso]['human'] = human;
-			var selects = $(this).find('[name="event_poll_time"]').get();
-			event_poll_object[iso]['times'] = [];
-			event_poll_object[iso]['human_times'] = [];
-			for (var i = 0; i < selects.length; i++) {
-				event_poll_object[iso]['times'].push(selects[i].value);
-				var index = selects[i].selectedIndex;
-				if (index == -1) {
-					event_poll_object[iso]['human_times'].push('-');
-				} else {
-					event_poll_object[iso]['human_times'].push(selects[i].options[index].text);
-				}
-			}
-		}
-	);
-}*/
-
+// TODO: simplify this next function
 elgg.event_poll.createEventObject = function() {
+	var event_poll_object = {};
 	max_time_count = 0;
-	event_poll_object = {};
 	$('.event-poll-date-options').each(
 		function() {
 			var iso = $(this).find('.event-poll-iso-date').html();
@@ -282,7 +260,7 @@ elgg.event_poll.createEventObject = function() {
 				event_poll_object[d]['human_times'] = [];
 				event_poll_object[d]['time_object'] = {};
 			}
-			event_poll_object[d]['time_object'][t] = {iso_time: t, human_time:human_time};
+			event_poll_object[d]['time_object'][t] = {minutes: t, human_time:human_time};
 			event_poll_object[d]['times'].push(t);
 			event_poll_object[d]['human_times'].push(human_time);
 			if (max_time_count < event_poll_object[d]['times'].length) {
@@ -290,12 +268,13 @@ elgg.event_poll.createEventObject = function() {
 			}
 		}
 	);
-	// now sort the structure into event_polls
+	// now sort the structure into the event_polls array
 	var iso_dates = elgg.event_poll.getKeys(event_poll_object);
 	iso_dates.sort();
 	event_polls = [];
 	for (var i = 0; i < iso_dates.length; i++) {
 		var pobj = event_poll_object[iso_dates[i]];
+		var nobj = {iso_date: pobj['iso_date'], human_date: pobj['human_date']};
 		var tobj = pobj['time_object'];
 		var times = elgg.event_poll.getKeys(tobj);
 		times.sort(function(a,b) { return a-b; });
@@ -303,8 +282,8 @@ elgg.event_poll.createEventObject = function() {
 		for (var j = 0; j < times.length; j++) {
 			ta.push(tobj[times[j]]);
 		}
-		pobj['times_array'] = ta;
-		event_polls.push(pobj);
+		nobj['times_array'] = ta;
+		event_polls.push(nobj);
 	} 
 }
 
@@ -360,7 +339,7 @@ elgg.event_poll.handleStage2 = function(e) {
 elgg.event_poll.handleStage3 = function(e) {
 	elgg.event_poll.createEventObject();
 	var event_length = 60*parseInt($('#event-poll-length-hour').val()) + parseInt($('#event-poll-length-minute').val());
-	elgg.action('event_poll/set_poll',{data : {poll: event_poll_object, event_length:event_length, guid: $('#event-poll-event-guid').val()}});
+	elgg.action('event_poll/set_poll',{data : {poll: event_polls, event_length:event_length, guid: $('#event-poll-event-guid').val()}});
 	elgg.event_poll.populateReadOnlyTable(max_time_count);
 
 	$('#event-poll-date-container').hide();
@@ -428,9 +407,6 @@ elgg.event_poll.insertReadOnlyTableRow = function(index,item) {
 }
 
 elgg.event_poll.handleStage1 = function(e) {
-	// TODO - put this next bit elsewhere when really editing an event poll
-	// add the data rows
-	//$.each(event_poll_object,elgg.event_poll.insertDateDiv);
 	$('#event-poll-back2-button').hide();
     $('#event-poll-send-button').hide();
 	$('#event-poll-next-button').show();
@@ -449,23 +425,27 @@ elgg.event_poll.handleStage1 = function(e) {
 }
 
 elgg.event_poll.handleChangeLength = function(e) {
+	click_id = 0;
 	elgg.event_poll.createEventObject();
 	$('#event-poll-date-wrapper').remove();
 	$('#event-poll-date-container').append('<div id="event-poll-date-wrapper"></div>');
-	$.each(event_poll_object,elgg.event_poll.insertDateDiv);
-
+	$.each(event_polls,elgg.event_poll.insertDateDiv);
+	var save_click_id = click_id;
+	click_id = 0;
 	// remove event poll options from calendar
 	var guid = $('#event-poll-event-guid').val();
 	$('#calendar').fullCalendar('removeEvents', function(e) { return e.guid == guid; });
 	// add event polls back to calendar with corrected times
-	$.each(event_poll_object,elgg.event_poll.insertEventPollOption);
+	$.each(event_polls,elgg.event_poll.insertEventPollOption);
+	click_id = save_click_id;
 	
 }
 elgg.event_poll.insertEventPollOption = function(key,value) {
-	var times = value['times'];	
-	var date_bits = key.split('-');
+	var times = value['times_array'];
+	var iso_date = value['iso_date'];	
+	var date_bits = iso_date.split('-');
 	for (var i = 0; i < times.length; i++) {
-		var minutes = times[i];
+		var minutes = times[i]['minutes'];
 		var date = new Date(parseInt(date_bits[0]),parseInt(date_bits[1])-1,parseInt(date_bits[2]),0,minutes);
 		elgg.event_poll.addEventPollOptionToCalendar(date);
 	}
@@ -484,25 +464,27 @@ elgg.event_poll.insertTableRow = function(index) {
 }
 
 elgg.event_poll.insertDateDiv = function(key,value) {
-	var date_bits = key.split('-');
+	var date_bits = value['iso_date'].split('-');
 	var date = new Date(parseInt(date_bits[0]),parseInt(date_bits[1])-1,parseInt(date_bits[2]));
 	var t = date.getTime();
-	$.each(value['times'], function(k,v) {
+	$.each(value['times_array'], function(k,v) {
 		var nd = new Date(t);
-		nd.setMinutes(v);
+		nd.setMinutes(v['minutes']);
 		elgg.event_poll.handleDayClick(nd);
 	});
 }
 
 elgg.event_poll.setSelectValuesForRow = function() {
-	var iso = $(this).find('.event-poll-iso-date').html();
-	if (event_poll_object[iso] != undefined) {
-		$($(this).find('[name="event_poll_time"]')).each(
-			function (index) {
-				var time = event_poll_object[iso]['times'][index];
-				$(this).val(time);				
-			}
-		);
+	var iso_date = $(this).find('.event-poll-iso-date').html();
+	for(var i = 0; i < event_polls.length; i++) {
+		if (event_polls[i]['iso_date'] == iso_date) {
+			$($(this).find('[name="event_poll_time"]')).each(
+				function (index) {
+					var time = event_polls[i]['times_array'][index]['minutes'];
+					$(this).val(time);				
+				}
+			);
+		}
 	}
 }
 
@@ -513,17 +495,27 @@ elgg.event_poll.populateTimesDropdowns = function(data) {
 
 elgg.event_poll.removeOption1 = function(e) {
 	var p = $(this).parent();
-	var iso = p.find('.event-poll-iso-date').html();
+	var iso_date = p.find('.event-poll-iso-date').html();
 	var click_id = p.find('.event-poll-click-id').html();
 	$('#calendar').fullCalendar('removeEvents', function(e) { return e.click_id == click_id; });
 	$(this).parent().remove();
-	delete event_poll_object[iso];
+	elgg.event_poll.removeDate(iso_date);
+}
+
+elgg.event_poll.removeDate = function(iso_date) {
+	var new_event_polls = [];
+	for(var i = 0; i < event_polls.length; i++) {
+		if (event_polls[i]['iso_date'] != iso_date) {
+			new_event_polls.push(event_polls[i]);
+		}
+	}
+	event_polls = new_event_polls;
 }
 
 elgg.event_poll.removeOption2 = function(e) {
-	var iso = $(this).find('.event-poll-iso-date').html();
+	var iso_date = $(this).find('.event-poll-iso-date').html();
 	$(this).parent().parent().remove();
-	delete event_poll_object[iso];
+	elgg.event_poll.removeDate(iso_date);
 }
 
 elgg.event_poll.sendPoll = function(e) {

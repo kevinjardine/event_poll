@@ -145,12 +145,14 @@ function event_poll_send_invitations($guid,$subject,$body,$invitees) {
 }
 
 function event_poll_get_options($event) {
-	$options = array();
+	$options = array('none');
 	if ($event->event_poll) {
 		$event_poll = unserialize($event->event_poll);
-		foreach($event_poll as $iso => $date) {
-			foreach($date['times'] as $time) {
-				$options[] = "{$iso}__{$time}";
+		foreach($event_poll as $date) {
+			$iso_date = $date['iso_date'];
+			foreach($date['times_array'] as $time) {
+				$minutes = $time['minutes'];
+				$options[] = "{$iso_date}__{$minutes}";
 			}
 		}
 	}
@@ -164,7 +166,7 @@ function event_poll_get_response_time($event_guid,$user_guid=0) {
 	$options= array(
 		'guid' => $event_guid,
 		'annotation_name' => 'event_poll_vote',
-		'owner_guid' => $user_guid,
+		'annotation_owner_guid' => $user_guid,
 		'limit' => 1,
 	);
 	$annotations = elgg_get_annotations($options);
@@ -223,22 +225,20 @@ function event_poll_get_voted_guids($event_guid) {
 
 // displays a vote table header for an event poll
 function event_poll_display_vote_table_header($event_poll) {
-	//$keys = array_keys($event_poll);
-	//$num_times = count($event_poll[$keys[0]]['times']);
 	$table_rows = '<tr><td class="event-poll-extra-td">&nbsp;</td>';
 	$table_header = '<tr><td class="event-poll-extra-td">&nbsp;</td>';
 	$i = 0;
-	foreach ($event_poll as $iso => $date) {
-		$num_times = count($date['times']);
+	foreach ($event_poll as $date) {
+		$num_times = count($date['times_array']);
 		$table_header .= '<td class="event-poll-vote-date-td-header event-poll-vote-date-td" colspan="'.$num_times.'">'.$date['human_date'].'</td>';
 		$j = 0;
-		foreach($date['human_times'] as $time) {
+		foreach($date['times_array'] as $time) {
 			if ($j == 0) {
-				$table_rows .= '<td class="event-poll-left-td">'.$time.'</td>';
+				$table_rows .= '<td class="event-poll-left-td">'.$time['human_time'].'</td>';
 			} else if ($j == $num_times - 1) {
-				$table_rows .= '<td class="event-poll-right-td">'.$time.'</td>';
+				$table_rows .= '<td class="event-poll-right-td">'.$time['human_time'].'</td>';
 			} else {
-				$table_rows .= '<td>'.$time.'</td>';
+				$table_rows .= '<td>'.$time['human_time'].'</td>';
 			}
 			$j += 1;
 		}
@@ -260,12 +260,14 @@ function event_poll_display_invitees($event_poll,$times_choices,$invitees,$voted
 	foreach($invitees as $user) {
 		if (in_array($user->guid, $voted_guids) && $user->guid != $current_user_guid) {
 			$table_rows .= '<tr><td class="event-poll-name-td">' .$user->name.'</td>';
-			foreach ($event_poll as $iso => $date) {
-				foreach($date['times'] as $time) {
+			foreach ($event_poll as $date) {
+				$iso_date = $date['iso_date'];
+				foreach($date['times_array'] as $time) {
 					if ($time == '-') {
 						$table_rows .= '<td class="event-poll-vote-internal-td">&nbsp;</td>';
 					} else {
-						$name = "{$iso}__{$time}";
+						$minutes = $time['minutes'];
+						$name = "{$iso_date}__{$minutes}";
 						if (isset($times_choices[$user->guid]) && in_array($name,$times_choices[$user->guid])) {
 							$table_rows .= '<td class="event-poll-vote-internal-td event-poll-check-image">';
 							$table_rows .= elgg_view('input/checkbox',array('value'=>1,'checked'=>'checked','disabled'=>'disabled'));
@@ -386,6 +388,7 @@ function event_poll_vote($event,$message='',$schedule_slot='') {
 		if (check_entity_relationship($current_user->guid, 'event_poll_invitation',$event->guid) && $event->event_poll) {
 			elgg_delete_annotations(array('guid'=>$event->guid,'annotation_name'=>'event_poll_vote','annotation_owner_guid' => $current_user->guid,'limit' => 0));
 			$poll_options = event_poll_get_options($event);
+			error_log("poll options: ".print_r($poll_options,TRUE));
 			foreach($poll_options as $option) {
 				$tick = get_input($option);
 				if ($tick) {
@@ -444,32 +447,39 @@ function event_poll_get_current_schedule_slot($event) {
 	}
 }
 
+function event_poll_set_time_limits($event,$poll,$event_length) {
+	$start_time = 2000000000;
+	$end_time = 0;
+	foreach($poll as $iso_date => $data) {
+		$ds = strtotime($iso_date);
+		foreach($data['times_array'] as $t) {
+			$m = $t['minutes'];
+			$ts = strtotime("+ $m minutes",$ds);
+			if ($start_time > $ts) {
+				$start_time = $ts;
+			}
+			
+			if ($end_time < $ts) {
+				$end_time = $ts;
+			}
+		}
+	}
+	$event->event_poll_start_time = $start_time;
+	$event->event_poll_end_time = $end_time+60*$event_length;
+	$event->event_length = $event_length;
+}
+
 function elgg_poll_set_poll($guid,$poll,$event_length) {
 	$event = get_entity($guid);
 	if (elgg_instanceof($event,'object','event_calendar') && $event->canEdit()) {
-		$start_time = 2000000000;
-		$end_time = 0;
-		foreach($poll as $iso_date => $data) {
-			$ds = strtotime($iso_date);
-			foreach($data['times'] as $t) {
-				$ts = strtotime("+ $t minutes",$ds);
-				if ($start_time > $ts) {
-					$start_time = $ts;
-				}
-				
-				if ($end_time < $ts) {
-					$end_time = $ts;
-				}
-			}
-		}
+		
 		
 		// sort the poll by time within date
-		
+		event_poll_set_time_limits($event,$poll,$event_length);
 		
 		$event->event_poll = serialize($poll);
-		$event->event_length = $event_length;
-		$event->event_poll_start_time = $start_time;
-		$event->event_poll_end_time = $end_time+60*$event_length;
+
+
 		$event->is_event_poll = 1;
 	}
 	
@@ -493,10 +503,13 @@ function event_poll_merge_poll_events($events, $start_time,$end_time) {
 		$data = array();
 		foreach($p as $iso_date => $times_data) {
 			$dts = strtotime($iso_date);
-			foreach($times_data['times'] as $m) {
-				$ts = strtotime("+ $m minutes",$dts);
-				$data[] = array('start_time' => $ts, 'end_time' => $ts+60*$event_length);
-			}
+			if (isset($times_data['times_array'])) {
+				foreach($times_data['times_array'] as $item) {
+					$m = $item['minutes'];
+					$ts = strtotime("+ $m minutes",$dts);
+					$data[] = array('start_time' => $ts, 'end_time' => $ts+60*$event_length);
+				}
+			} 
 		}
 		$events[] = array('event' => $e,'is_event_poll'=>TRUE,'data' => $data);
 	}
@@ -512,7 +525,6 @@ function event_poll_handle_event_poll_add_items($group_guid=0) {
 		$url_add_event =  "event_calendar/add";
 		$url_schedule_event =  "event_calendar/schedule";		
 	}
-	$url_list_polls =  "event_poll/list/all";
 	
 	$item = new ElggMenuItem('event-calendar-0add', elgg_echo('event_calendar:add_event'), $url_add_event);
 	$item->setSection('event_poll');
@@ -521,9 +533,83 @@ function event_poll_handle_event_poll_add_items($group_guid=0) {
 	$item = new ElggMenuItem('event-calendar-1schedule', elgg_echo('event_calendar:schedule_event'), $url_schedule_event);
 	$item->setSection('event_poll');
 	elgg_register_menu_item('page', $item);
-	
-	$item = new ElggMenuItem('event-calendar-2list-polls', elgg_echo('event_calendar:list_polls'), $url_list_polls);
-	$item->setSection('event_poll');
-	elgg_register_menu_item('page', $item);
 }
 
+// TODO: if $resend, then resend the poll invitations with a message that the poll has been changed
+function event_poll_change($event_guid,$day_delta,$minute_delta,$new_time,$resend) {
+	error_log("fragment: ".substr($new_time,strlen($new_time)-6));
+	if (substr($new_time,strlen($new_time)-6) == ".000Z") {
+		$new_time = substr($new_time,0,strlen($new_time)-6);
+	}
+	
+	$ts = strtotime($new_time);
+	error_log("The date $new_time was converted to the timestamp {$ts}.");
+	if (!$ts) {
+		return;
+	}
+	$mdd = -((int) $day_delta);
+	$mmd = -((int) $minute_delta);
+	$start_time = strtotime("$mdd days",$ts);
+	$start_time = strtotime("$mmd minutes",$start_time);
+	error_log("Looking for an event poll option with start time: $start_time,".date('c',$start_time));
+	$event = get_entity($event_guid);
+	if (elgg_instanceof($event,'object','event_calendar') && $event->canEdit() && $event->is_event_poll) {
+		$poll = unserialize($event->event_poll);
+		
+		// remove previous value
+		foreach($poll as $iso => $option) {
+			$tt = strtotime($iso);
+			$t = $option['times_array'];
+			$new_t = array();
+			foreach($t as $opt) {
+				$compare_time = $tt+$opt['minutes']*60;
+				error_log("Comparing start time $start_time with {$compare_time}.");
+				if ($start_time != $compare_time) {
+					$new_t[] = $opt;
+				} else {
+					error_log('found previous value');
+				}
+			}
+			if (!$new_t) {
+				unset($poll[$iso]);
+			} else {
+				$poll[iso]['times_array'] = $new_t;
+			}
+		}
+		
+		// add new value
+		$new_iso = date('Y-m-d',$ts);
+		$minutes = ($ts-strtotime($new_iso))/60;
+		error_log("new_iso: $new_iso and minutes: $minutes");
+		if (isset($poll[$new_iso])) {
+			$poll[$new_iso]['times_array'][] = array('minutes'=>$minutes,'human_time'=>date('g:i a',$ts));
+			usort($poll[$new_iso]['times_array'],'event_poll_sort_times_array');
+		} else {
+			$poll[$new_iso] = array('times_array' => array(array('minutes'=>$minutes,'human_time'=>date('g:i a',$ts))));
+		}
+		$event->event_poll = serialize($poll);
+		event_poll_set_time_limits($event,$poll,$event->event_length);
+		if ($resend) {
+			event_poll_resend_invitations($event);
+		}
+		return TRUE;
+	}
+	return FALSE;
+}
+
+function event_poll_sort_times_array($a,$b) {
+	return $a['minutes'] - $b['minutes'];
+}
+
+function event_poll_resend_invitations($event) {
+	$subject = elgg_echo('event_poll:reschedule_subject',array($event->title));
+	$body = elgg_echo('event_poll:reschedule_body');
+	$invitees = event_poll_get_invitees($event->guid);
+	$site = elgg_get_site_entity();
+	$body .= "\n\n".elgg_get_site_url().'event_poll/vote/'.$event->guid;
+	if (is_array($invitees) && count($invitees) > 0) {
+		// email invitees
+		notify_user($invitees,$site->guid,$subject,$body,NULL,'email');
+	}
+	return TRUE;
+}

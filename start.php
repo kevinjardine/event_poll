@@ -39,6 +39,10 @@ function event_poll_pagesetup() {
 		if (event_calendar_can_add($group_guid)) {
 			event_poll_handle_event_poll_add_items($group_guid);
 		}
+		$url_list_polls =  "event_poll/list/all";
+		$item = new ElggMenuItem('event-calendar-2list-polls', elgg_echo('event_calendar:list_polls'), $url_list_polls);
+		$item->setSection('event_poll');
+		elgg_register_menu_item('page', $item);
 	}
 }
 

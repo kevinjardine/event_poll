@@ -25,12 +25,14 @@ if ($event->event_poll) {
 		
 		// current user		
 		$table_rows .= '<tr><td class="event-poll-name-td">' .$current_user->name.'</td>';
-		foreach ($event_poll as $iso => $date) {
-			foreach($date['times'] as $time) {
-				if ($time == '-') {
+		foreach ($event_poll as $date) {
+			$iso_date = $date['iso_date'];
+			foreach($date['times_array'] as $time) {
+				$minutes = $time['minutes'];
+				if ($minutes == '-') {
 					$table_rows .= '<td class="event-poll-vote-current-td">&nbsp</td>';
 				} else {
-					$name = "{$iso}__{$time}";
+					$name = "{$iso_date}__{$minutes}";
 					if (isset($times_choices[$current_user->guid]) && in_array($name,$times_choices[$current_user->guid])) {
 						$table_rows .= '<td class="event-poll-vote-current-td">'.elgg_view('input/checkbox',array('class'=>'event-poll-vote-checkbox','name'=>$name,'value'=>1,'checked'=>'checked')).'</td>';
 					} else {
@@ -40,17 +42,23 @@ if ($event->event_poll) {
 			}
 		}
 		// add the none option
-		$table_rows .= '<td class="event-poll-vote-current-td">'.elgg_view('input/checkbox',array('class'=>'event-poll-vote-none-checkbox','name'=>'none','value'=>1)).'</td>';
+		if (isset($times_choices[$current_user->guid]) && in_array('none',$times_choices[$current_user->guid])) {
+			$table_rows .= '<td class="event-poll-vote-current-td">'.elgg_view('input/checkbox',array('class'=>'event-poll-vote-none-checkbox','name'=>'none','value'=>1,'checked'=>'checked')).'</td>';
+		} else {
+			$table_rows .= '<td class="event-poll-vote-current-td">'.elgg_view('input/checkbox',array('class'=>'event-poll-vote-none-checkbox','name'=>'none','value'=>1)).'</td>';
+		}
 		$table_rows .= '</tr>';
 		if ($event->canEdit()) {
 			// schedule bit	
 			$table_rows .= '<tr><td class="event-poll-name-td">' .elgg_echo('event_poll:choose_time').'</td>';
-			foreach ($event_poll as $iso => $date) {
-				foreach($date['times'] as $time) {
-					if ($time == '-') {
+			foreach ($event_poll as $date) {
+				$iso_date = $date['iso_date'];
+				foreach($date['times_array'] as $time) {
+					$minutes = $time['minutes'];
+					if ($minutes == '-') {
 						$table_rows .= '<td class="event-poll-vote-current-td">&nbsp</td>';
 					} else {
-						$value = "{$iso}__{$time}";
+						$value = "{$iso_date}__{$minutes}";
 						$table_rows .= '<td class="event-poll-vote-current-td">';
 						if ($current_schedule_slot == $value) {
 							$table_rows .= '<input type="radio" name="schedule_slot" value="'.$value.'" checked="checked">';
