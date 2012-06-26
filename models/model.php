@@ -453,9 +453,11 @@ function event_poll_set_time_limits($event,$poll,$event_length) {
 	foreach($poll as $date) {
 		$iso_date = $date['iso_date'];
 		$ds = strtotime($iso_date);
+		error_log("in event_poll_set_time_limits, iso_date = $iso_date, ds = $ds");
 		foreach($date['times_array'] as $t) {
 			$m = $t['minutes'];
 			$ts = strtotime("+ $m minutes",$ds);
+			error_log("in event_poll_set_time_limits loop, m = $m, ts = $ts");
 			if ($start_time > $ts) {
 				$start_time = $ts;
 			}
@@ -472,14 +474,12 @@ function event_poll_set_time_limits($event,$poll,$event_length) {
 
 function elgg_poll_set_poll($guid,$poll,$event_length) {
 	$event = get_entity($guid);
-	if (elgg_instanceof($event,'object','event_calendar') && $event->canEdit()) {
-		
+	if (elgg_instanceof($event,'object','event_calendar') && $event->canEdit()) {		
 		
 		// sort the poll by time within date
 		event_poll_set_time_limits($event,$poll,$event_length);
 		
 		$event->event_poll = serialize($poll);
-
 
 		$event->is_event_poll = 1;
 	}
@@ -509,7 +509,7 @@ function event_poll_merge_poll_events($events, $start_time,$end_time) {
 				foreach($times_data['times_array'] as $item) {
 					$m = $item['minutes'];
 					$ts = strtotime("+ $m minutes",$dts);
-					$data[] = array('start_time' => $ts, 'end_time' => $ts+60*$event_length);
+					$data[] = array('start_time' => $ts, 'end_time' => $ts+60*$event_length, 'iso_date' => $iso_date,'minutes'=>$m);
 				}
 			} 
 		}
@@ -537,62 +537,82 @@ function event_poll_handle_event_poll_add_items($group_guid=0) {
 	elgg_register_menu_item('page', $item);
 }
 
-// TODO: if $resend, then resend the poll invitations with a message that the poll has been changed
-function event_poll_change($event_guid,$day_delta,$minute_delta,$new_time,$resend) {
-	if (substr($new_time,strlen($new_time)-6) == ".000Z") {
-		$new_time = substr($new_time,0,strlen($new_time)-6);
+// TODO: make human date configurable
+function event_poll_change($event_guid,$day_delta,$minute_delta,$new_time,$resend,$minutes,$iso_date) {
+	error_log("event_poll_change($event_guid,$day_delta,$minute_delta,$new_time,$resend,$minutes,$iso_date)");
+	/*if (substr($new_time,strlen($new_time)-1) == "Z") {
+		$new_time = substr($new_time,0,strlen($new_time)-1);
 	}
 	
-	$ts = strtotime($new_time);
-	if (!$ts) {
+	$new_ts = strtotime($new_time);
+	if (!$new_ts) {
 		return;
 	}
 	$mdd = -((int) $day_delta);
 	$mmd = -((int) $minute_delta);
-	$start_time = strtotime("$mdd days",$ts);
-	$start_time = strtotime("$mmd minutes",$start_time);
-	error_log("Looking for an event poll option with start time: $start_time,".date('c',$start_time));
+	error_log("event_poll_change: new_time: $new_time, new_ts:$new_ts, day_delta: $day_delta, minute_delta: $minute_delta");
+	$cur_ts = strtotime("$mdd days",$new_ts+$mmd*60);
+	#$start_time = strtotime("$mmd minutes",$start_time);
+	$start_date = date('Y-m-d',$cur_ts);
+	$human_time = date('g:i a',$cur_ts);
+	$minutes = ($cur_ts-strtotime($start_date))/60;
+	error_log("Looking for an event poll option with start_date: $start_date, minutes: $minutes, human time: $human_time, start time: $cur_ts,".date('c',$cur_ts));
+	*/
 	$event = get_entity($event_guid);
 	if (elgg_instanceof($event,'object','event_calendar') && $event->canEdit() && $event->is_event_poll) {
 		$poll = unserialize($event->event_poll);
-		
+		$new_poll = array();
 		// remove previous value
-		foreach($poll as $iso => $option) {
-			$tt = strtotime($iso);
-			$t = $option['times_array'];
-			$new_t = array();
-			foreach($t as $opt) {
-				$compare_time = $tt+$opt['minutes']*60;
-				error_log("Comparing start time $start_time with {$compare_time}.");
-				if ($start_time != $compare_time) {
-					$new_t[] = $opt;
-				} else {
-					error_log('found previous value');
+		foreach($poll as $option) {
+			error_log("comparing {$option['iso_date']} and $iso_date");
+			if ($option['iso_date'] == $iso_date) {
+				$t = $option['times_array'];
+				$new_t = array();
+				foreach($t as $opt) {
+					error_log("comparing {$opt['minutes']} and $minutes");
+					if ($opt['minutes'] != $minutes) {
+						$new_t[] = $opt;
+					}
 				}
-			}
-			if (!$new_t) {
-				unset($poll[$iso]);
+				if ($new_t) {
+					$option['times_array'] = $new_t;
+					$new_poll[] = $option;
+				}
 			} else {
-				$poll[iso]['times_array'] = $new_t;
+				$new_poll[] = $option;
 			}
 		}
 		
 		// add new value
-		$new_iso = date('Y-m-d',$ts);
-		$minutes = ($ts-strtotime($new_iso))/60;
-		error_log("new_iso: $new_iso and minutes: $minutes");
-		if (isset($poll[$new_iso])) {
-			$poll[$new_iso]['times_array'][] = array('minutes'=>$minutes,'human_time'=>date('g:i a',$ts));
-			usort($poll[$new_iso]['times_array'],'event_poll_sort_times_array');
-		} else {
-			$poll[$new_iso] = array('times_array' => array(array('minutes'=>$minutes,'human_time'=>date('g:i a',$ts))));
+		$new_ts = strtotime("$day_delta days",strtotime($iso_date));
+		$new_iso_date = date('Y-m-d',$new_ts);
+		$new_minutes = $minutes+$minute_delta;
+		error_log("new_iso: $new_iso_date and minutes: $new_minutes");
+		$done = FALSE;
+		foreach($new_poll as $option) {
+			$iso_date = $option['iso_date'];
+			if ($iso_date == $new_iso_date) {
+				$option['times_array'][] = array('minutes'=>$new_minutes,'human_time'=>date('g:i a',$new_ts+($new_minutes*60)));
+				usort($option['times_array'],'event_poll_sort_times_array');
+				$done = TRUE;
+			}
 		}
+		if (!$done) {
+			$new_option = array(
+				'iso_date'=>$new_iso_date,
+				'human_date'=>date("F j, Y",$new_ts),
+				'times_array'=>array(array('minutes'=>$new_minutes,'human_time'=>date('g:i a',$new_ts))),
+			);
+			$new_poll[] = $new_option;
+			usort($new_poll,'event_poll_sort');
+		}
+		$poll = $new_poll;
 		$event->event_poll = serialize($poll);
 		event_poll_set_time_limits($event,$poll,$event->event_length);
 		if ($resend) {
 			event_poll_resend_invitations($event);
 		}
-		return TRUE;
+		return array('minutes'=>$new_minutes,'iso_date'=>$new_iso_date);
 	}
 	return FALSE;
 }
@@ -601,15 +621,23 @@ function event_poll_sort_times_array($a,$b) {
 	return $a['minutes'] - $b['minutes'];
 }
 
+function event_poll_sort($a,$b) {
+	return strtotime($a['iso_date']) - strtotime($b['iso_date']);
+}
+
 function event_poll_resend_invitations($event) {
 	$subject = elgg_echo('event_poll:reschedule_subject',array($event->title));
 	$body = elgg_echo('event_poll:reschedule_body');
 	$invitees = event_poll_get_invitees($event->guid);
+	$guids = array();
+	foreach($invitees as $invitee) {
+		$guids[] = $invitee->guid;
+	}
 	$site = elgg_get_site_entity();
 	$body .= "\n\n".elgg_get_site_url().'event_poll/vote/'.$event->guid;
 	if (is_array($invitees) && count($invitees) > 0) {
 		// email invitees
-		notify_user($invitees,$site->guid,$subject,$body,NULL,'email');
+		notify_user($guids,$site->guid,$subject,$body,NULL,'email');
 	}
 	return TRUE;
 }
