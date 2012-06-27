@@ -388,7 +388,6 @@ function event_poll_vote($event,$message='',$schedule_slot='') {
 		if (check_entity_relationship($current_user->guid, 'event_poll_invitation',$event->guid) && $event->event_poll) {
 			elgg_delete_annotations(array('guid'=>$event->guid,'annotation_name'=>'event_poll_vote','annotation_owner_guid' => $current_user->guid,'limit' => 0));
 			$poll_options = event_poll_get_options($event);
-			error_log("poll options: ".print_r($poll_options,TRUE));
 			foreach($poll_options as $option) {
 				$tick = get_input($option);
 				if ($tick) {
@@ -453,11 +452,9 @@ function event_poll_set_time_limits($event,$poll,$event_length) {
 	foreach($poll as $date) {
 		$iso_date = $date['iso_date'];
 		$ds = strtotime($iso_date);
-		error_log("in event_poll_set_time_limits, iso_date = $iso_date, ds = $ds");
 		foreach($date['times_array'] as $t) {
 			$m = $t['minutes'];
 			$ts = strtotime("+ $m minutes",$ds);
-			error_log("in event_poll_set_time_limits loop, m = $m, ts = $ts");
 			if ($start_time > $ts) {
 				$start_time = $ts;
 			}
@@ -539,37 +536,16 @@ function event_poll_handle_event_poll_add_items($group_guid=0) {
 
 // TODO: make human date configurable
 function event_poll_change($event_guid,$day_delta,$minute_delta,$new_time,$resend,$minutes,$iso_date) {
-	error_log("event_poll_change($event_guid,$day_delta,$minute_delta,$new_time,$resend,$minutes,$iso_date)");
-	/*if (substr($new_time,strlen($new_time)-1) == "Z") {
-		$new_time = substr($new_time,0,strlen($new_time)-1);
-	}
-	
-	$new_ts = strtotime($new_time);
-	if (!$new_ts) {
-		return;
-	}
-	$mdd = -((int) $day_delta);
-	$mmd = -((int) $minute_delta);
-	error_log("event_poll_change: new_time: $new_time, new_ts:$new_ts, day_delta: $day_delta, minute_delta: $minute_delta");
-	$cur_ts = strtotime("$mdd days",$new_ts+$mmd*60);
-	#$start_time = strtotime("$mmd minutes",$start_time);
-	$start_date = date('Y-m-d',$cur_ts);
-	$human_time = date('g:i a',$cur_ts);
-	$minutes = ($cur_ts-strtotime($start_date))/60;
-	error_log("Looking for an event poll option with start_date: $start_date, minutes: $minutes, human time: $human_time, start time: $cur_ts,".date('c',$cur_ts));
-	*/
 	$event = get_entity($event_guid);
 	if (elgg_instanceof($event,'object','event_calendar') && $event->canEdit() && $event->is_event_poll) {
 		$poll = unserialize($event->event_poll);
 		$new_poll = array();
 		// remove previous value
 		foreach($poll as $option) {
-			error_log("comparing {$option['iso_date']} and $iso_date");
 			if ($option['iso_date'] == $iso_date) {
 				$t = $option['times_array'];
 				$new_t = array();
 				foreach($t as $opt) {
-					error_log("comparing {$opt['minutes']} and $minutes");
 					if ($opt['minutes'] != $minutes) {
 						$new_t[] = $opt;
 					}
@@ -587,7 +563,6 @@ function event_poll_change($event_guid,$day_delta,$minute_delta,$new_time,$resen
 		$new_ts = strtotime("$day_delta days",strtotime($iso_date));
 		$new_iso_date = date('Y-m-d',$new_ts);
 		$new_minutes = $minutes+$minute_delta;
-		error_log("new_iso: $new_iso_date and minutes: $new_minutes");
 		$done = FALSE;
 		foreach($new_poll as $option) {
 			$iso_date = $option['iso_date'];
