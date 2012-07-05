@@ -162,7 +162,7 @@ elgg.event_poll.formatDate = function(date) {
 		}		
 		
 	} else {
-		t = h+":"+m;
+		t = h+":"+mf;
 	}
 	var r = '';
 	date2 = new Date(date.getTime());
