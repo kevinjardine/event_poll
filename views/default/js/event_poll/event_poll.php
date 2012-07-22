@@ -20,6 +20,8 @@ elgg.event_poll.init = function () {
 	$('#event-poll-length-minute').change(elgg.event_poll.handleChangeLength);
 	$('.event-poll-vote-checkbox').click(elgg.event_poll.handleVoteChoice);
 	$('.event-poll-vote-none-checkbox').click(elgg.event_poll.handleVoteNoneChoice);
+	$('.event-poll-listing-item-wrapper').mouseover(elgg.event_poll.handlePollListMouseover);
+	$('.event-poll-listing-item-wrapper').mouseout(elgg.event_poll.handlePollListMouseout);
 	$('[name="schedule_slot"][type=radio]').change(elgg.event_poll.handleTimeSelection);
 	elgg.event_poll.handleTimeSelection();
 	elgg.event_poll.setupCalendar();
@@ -29,6 +31,14 @@ elgg.event_poll.init = function () {
 		menu = autocomplete.menu;
 		menu.activate( $.Event({ type: "mouseenter" }), menu.element.children().first() );
 		});
+}
+
+elgg.event_poll.handlePollListMouseover = function(e) {
+	$("div",this).addClass('event-poll-hovered');
+}
+
+elgg.event_poll.handlePollListMouseout = function(e) {
+	$("div",this).removeClass('event-poll-hovered');
 }
 
 elgg.event_poll.handleVoteChoice = function(e) {

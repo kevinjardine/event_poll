@@ -18,6 +18,7 @@ function event_poll_init() {
 	// register actions
 	$action_path = elgg_get_plugins_path() . 'event_poll/actions/event_poll';
 	elgg_register_action("event_poll/edit","$action_path/edit.php");
+	elgg_register_action("event_poll/delete","$action_path/delete.php");
 	elgg_register_action("event_poll/set_poll","$action_path/set_poll.php");
 	elgg_register_action("event_poll/invite","$action_path/invite.php");
 	elgg_register_action("event_poll/vote","$action_path/vote.php");

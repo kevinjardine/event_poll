@@ -29,4 +29,22 @@ if ($time_responded) {
 }
 ?>
 </div>
+<?php
+if ($e->canEdit()) {
+	echo '<div class="event-poll-listing-delete">';
+	$options = array(
+		'name' => 'delete',
+		'href' => "action/event_poll/delete?guid=$e->guid",
+		'text' => elgg_view_icon('delete'),
+		'title' => elgg_echo('event_poll:delete'),
+		'confirm' => elgg_echo('event_poll:deleteconfirm'),
+		'is_action' => TRUE,
+	);
+	echo elgg_view('output/confirmlink',$options);
+} else {
+	echo '<div class="event-poll-listing-delete-inactive">';
+	echo '-';
+}
+?>
+</div>
 </div>

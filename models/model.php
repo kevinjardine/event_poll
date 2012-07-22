@@ -298,6 +298,7 @@ function event_poll_display_invitees($event_poll,$times_choices,$invitees,$voted
 
 function event_poll_get_page_content_list($filter) {
 	elgg_load_library('elgg:event_calendar');
+	elgg_load_js('elgg.event_poll');
 	//event_calendar_handle_event_poll_add_items();
 	$filter_override = elgg_view('event_poll/filter_menu',array('filter' => $filter));
 	$options = array(
@@ -323,6 +324,7 @@ function event_poll_get_page_content_list($filter) {
 		$requester_header = elgg_echo('event_poll:listing:header:requester');
 		$date_header = elgg_echo('event_poll:listing:header:date');
 		$responded_header = elgg_echo('event_poll:listing:header:responded');
+		$delete_header = elgg_echo('event_poll:listing:header:delete');
 		
 		$header_bit = <<<HTML
 		<div class="event-poll-listing-header-wrapper">
@@ -330,6 +332,7 @@ function event_poll_get_page_content_list($filter) {
 			<div class="event-poll-listing-header-requester">$requester_header</div>
 			<div class="event-poll-listing-header-date">$date_header</div>
 			<div class="event-poll-listing-header-responded">$responded_header</div>
+			<div class="event-poll-listing-header-delete">$delete_header</div>
 		</div>
 HTML;
 		$content = $header_bit.$content;
@@ -347,13 +350,20 @@ HTML;
 	return elgg_view_page($title,$body);
 }
 
-function event_poll_list_polls($es) {
+function event_poll_list_polls($es,$vars) {
 	$r = '';
 	foreach($es as $e) {
 		$r .= elgg_view('event_poll/list_poll',array('event'=>$e));
 	}
 	
-	return $r;
+	$nav = elgg_view('navigation/pagination', array(
+		'offset' => get_input('offset',0),
+		'count' => $vars['count'],
+		'limit' => 15,
+		'offset_key' => 'offset',
+	));
+	
+	return $r.'<div class="event-poll-pagination">'.$nav.'</div>';
 }
 
 function event_poll_vote($event,$message='',$schedule_slot='') {

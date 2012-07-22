@@ -65,6 +65,9 @@ $english = array(
 	'event_poll:minutes' => "minutes",
 	'event_poll:selected_days' => "Selected times",
 	'event_calendar:reminders:label' => "Reminders",
+	'event_poll:listing:header:delete' => "Delete",
+	'event_poll:delete' => "Delete event",
+	'event_poll:deleteconfirm' => "Are you sure that you want to delete this event?",
 
 );
 				
